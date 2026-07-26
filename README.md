@@ -1,11 +1,13 @@
-5.Restore an EC2 Instance from the Latest Snapshot
-Objective: Automate disaster-recovery: rebuild an instance from its most recent EBS snapshot.
+Automated S3 Bucket Cleanup (Objects Older Than 30 Days)
+Objective: Automate deletion of stale objects in an S3 bucket.
+Task: Delete files older than 30 days in a specific bucket.
 Instructions:
-1.	Prerequisite: At least one snapshot of the source instance's root volume exists (Graded 2 pairs well here).
-2.	Lambda IAM Role: ec2:DescribeSnapshots, ec2:RegisterImage (or ec2:CreateImage), ec2:RunInstances, ec2:DescribeImages, ec2:CreateTags.
-3.	Lambda Function (Boto3):
-1.	Find the most recent snapshot for the given volume/instance (sort describe_snapshots by StartTime).
-2.	Register an AMI from the snapshot with register_image (specify root device mapping).
-3.	Launch a new t3.micro instance from that AMI and tag it (e.g., RestoredFrom=<snapshot-id>).
-4.	Print the new instance ID.
-4.	Testing: Trigger manually; verify the new instance boots and contains the snapshot's data. Terminate test instances afterwards to avoid charges.
+1.	S3 Setup: Create a bucket and upload several files. (Since you can't easily create "old" objects, temporarily lower the age threshold to minutes for testing — then set it back to 30 days in the final code.)
+2.	Lambda IAM Role: Inline policy with s3:ListBucket and s3:DeleteObject scoped to your bucket.
+3.	Lambda Function (Python 3.12+, Boto3):
+1.	List objects in the bucket (use the paginator — never assume one page of results).
+2.	Compare each object's LastModified (timezone-aware) with the current UTC time.
+3.	Delete objects older than 30 days.
+4.	Print the names of deleted objects.
+4.	Testing: Manually trigger and confirm only newer files remain.
+5.	Discussion point (include in your documentation): In production, S3 Lifecycle Rules handle this natively with zero code. Explain in 2–3 lines when you'd use Lambda instead (e.g., conditional logic, naming patterns, cross-service actions).
